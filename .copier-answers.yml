@@ -1,0 +1,18 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.6.3
+_src_path: https://github.com/jupyterlab/extension-template
+advanced: true
+author_email: noamziv0310@gmail.com
+author_name: Noam Ziv
+has_ai_rules: false
+has_binder: false
+has_settings: true
+kind: frontend
+labextension_name: jupyterlab-snippets
+project_short_description: A JupyterLab extension for managing custom snippets, compatible
+    with JupyterLab 4.x.
+python_name: jupyterlab_snippets
+repository: https://github.com/noamz1v/jupyterlab-snippets
+test: false
+yarn_linker: node-modules
+
