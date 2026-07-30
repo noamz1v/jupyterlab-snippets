@@ -1,7 +1,5 @@
 # jupyterlab_snippets
 
-[![Github Actions Status](https://github.com/noamz1v/jupyterlab-snippets/workflows/Build/badge.svg)](https://github.com/noamz1v/jupyterlab-snippets/actions/workflows/build.yml)
-
 A JupyterLab extension for managing custom snippets, compatible with JupyterLab 4.x.
 
 ## Requirements
