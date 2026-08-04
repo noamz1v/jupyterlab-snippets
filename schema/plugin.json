@@ -3,6 +3,12 @@
   "title": "jupyterlab-snippets",
   "description": "jupyterlab-snippets settings.",
   "type": "object",
-  "properties": {},
+  "properties": {
+    "custom_snippets_path": {
+      "type": "string",
+      "title": "Custom snippets file path",
+      "description": "Path to the JSON file with snippets file."
+    }
+  },
   "additionalProperties": false
 }
