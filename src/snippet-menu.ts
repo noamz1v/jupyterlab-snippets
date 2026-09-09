@@ -1,119 +1,117 @@
 import { JupyterFrontEnd } from '@jupyterlab/application';
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 import { ToolbarButton, showErrorMessage } from '@jupyterlab/apputils';
-import { Menu } from '@lumino/widgets';
+import { Contents } from '@jupyterlab/services';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
+import { CommandRegistry } from '@lumino/commands';
+import { Menu } from '@lumino/widgets';
 import { SnippetMap } from './types';
 import { loadSnippets } from './snippets-loader';
 import { insertSnippetToCell } from './notebook-actions';
-import { CommandRegistry } from '@lumino/commands';
 
 /** Turn a snippet label into a slug suitable for a command id. */
 const formatLabel = (label: string): string =>
   label.toLowerCase().replace(/\s+/g, '-');
 
-/**
- * Populate `menu` with one item per snippet, registering a backing
- * command for each.
- *
- * @returns a function that disposes every command registered by this
- * call, to be run once the menu is no longer needed.
- */
-export const addSnippetsToMenu = (
-  commands: CommandRegistry,
+/** Populate `menu` with one item per snippet, backed by a command each. */
+const addSnippetsToMenu = (
   menu: Menu,
   snippets: SnippetMap,
   panel: NotebookPanel
-): (() => void) => {
-  const registered: { dispose(): void }[] = [];
+): void => {
+  const { commands } = menu;
 
-  Object.entries(snippets).forEach(([label, snippetContent]) => {
-    const id = `snippets:${formatLabel(label)}:${Date.now()}`;
+  for (const [label, source] of Object.entries(snippets)) {
+    // Salt each id with a timestamp so a rebuild never reuses an existing
+    // command: edits to a snippet's body (not just its name) are then
+    // always reflected the next time the menu is opened.
+    const command = `snippets:${formatLabel(label)}:${Date.now()}`;
 
-    if (!commands.hasCommand(id)) {
-      registered.push(
-        commands.addCommand(id, {
-          label,
-          execute: async () => {
-            const inserted = await insertSnippetToCell(panel, snippetContent);
-            if (!inserted) {
-              showErrorMessage('Error', 'No notebook model available');
-            }
+    if (!commands.hasCommand(command)) {
+      commands.addCommand(command, {
+        label,
+        execute: async () => {
+          const inserted = await insertSnippetToCell(panel, source);
+          if (!inserted) {
+            showErrorMessage('Error', 'No notebook model available');
           }
-        })
-      );
+        }
+      });
     }
 
-    menu.addItem({ command: id });
-  });
-
-  return () => registered.forEach(command => command.dispose());
+    menu.addItem({ command });
+  }
 };
 
+/**
+ * Read the configured snippets file and build a menu of its entries.
+ *
+ * Each menu owns a private {@link CommandRegistry}, so its commands never
+ * touch the application registry and are collected with the menu itself.
+ *
+ * @returns the menu, or `null` if no menu could be built (a dialog
+ * explaining why has already been shown).
+ */
+const buildSnippetMenu = async (
+  contents: Contents.IManager,
+  settings: ISettingRegistry.ISettings,
+  panel: NotebookPanel
+): Promise<Menu | null> => {
+  const snippetsPath = settings.get('custom_snippets_path').composite as string;
+  if (!snippetsPath) {
+    showErrorMessage(
+      'Snippets Error',
+      'Unable to find custom snippets file path, did you forget to define one in the settings?'
+    );
+    return null;
+  }
+
+  const { snippets, error } = await loadSnippets(contents, snippetsPath);
+  if (error) {
+    showErrorMessage(error.title, error.message);
+  }
+  if (!snippets) {
+    return null;
+  }
+
+  const menu = new Menu({ commands: new CommandRegistry() });
+  addSnippetsToMenu(menu, snippets, panel);
+  return menu;
+};
+
+/**
+ * Create the notebook toolbar button that opens the snippets menu, anchored
+ * beneath the button, for the notebook that is currently active.
+ */
 export const createSnippetsButton = (
   app: JupyterFrontEnd,
   tracker: INotebookTracker,
   settings: ISettingRegistry.ISettings
 ): ToolbarButton => {
-  const { commands, serviceManager } = app;
-  const contents = serviceManager.contents;
-
-  // The most recently opened menu. Disposing it on the next open releases
-  // the commands registered for its items, so the global command registry
-  // does not grow with every click.
-  let activeMenu: Menu | null = null;
+  const contents = app.serviceManager.contents;
 
   const button = new ToolbarButton({
     label: 'Snippets',
     tooltip: 'Open snippet menu',
     onClick: async () => {
-      activeMenu?.dispose();
-      activeMenu = null;
-
       const panel = tracker.currentWidget;
-
       if (!panel) {
         showErrorMessage('Error', 'No active notebook found');
         return;
       }
 
-      let hasSnippets = false;
-
-      const menu = new Menu({ commands });
-
-      const snippetsPath = settings.get('custom_snippets_path')
-        .composite as string;
-
-      if (snippetsPath) {
-        const { snippets, error } = await loadSnippets(contents, snippetsPath);
-        if (error) {
-          showErrorMessage(error.title, error.message);
-        }
-        if (snippets) {
-          const disposeCommands = addSnippetsToMenu(
-            commands,
-            menu,
-            snippets,
-            panel
-          );
-          menu.disposed.connect(disposeCommands);
-          hasSnippets = true;
-        }
-      } else {
-        showErrorMessage(
-          'Snippets Error',
-          'Unable to find custom snippets file path, did you forget to define one in the settings?'
-        );
-      }
-
-      if (hasSnippets) {
-        activeMenu = menu;
-        const rect = button.node.getBoundingClientRect();
-        menu.open(rect.left, rect.bottom);
-      } else {
-        menu.dispose();
+      const menu = await buildSnippetMenu(contents, settings, panel);
+      if (!menu) {
         showErrorMessage('Snippets', 'No snippets were found');
+        return;
       }
+
+      menu.aboutToClose.connect(() => {
+        setTimeout(() => menu.dispose(), 0);
+      });
+
+      const { left, bottom } = button.node.getBoundingClientRect();
+      menu.open(left, bottom);
     }
   });
 
