@@ -1,3 +1,3 @@
 export interface Snippets {
-    [key: string]: string;
+  [key: string]: string;
 }

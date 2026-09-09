@@ -31,10 +31,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     if (settingRegistry) {
       try {
         settings = await settingRegistry.load(plugin.id);
-        console.log(
-          'jupyterlab-snippets settings loaded:',
-          settings.composite
-        );
+        console.log('jupyterlab-snippets settings loaded:', settings.composite);
       } catch (reason) {
         console.error(
           'Failed to load settings for jupyterlab-snippets.',
@@ -43,11 +40,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
       }
     }
 
-    const snippetsButton = createSnippetsButton(
-      app,
-      tracker,
-      settings
-    );
+    const snippetsButton = createSnippetsButton(app, tracker, settings);
 
     const SNIPPETS_BUTTON_POSITION = 10;
 
