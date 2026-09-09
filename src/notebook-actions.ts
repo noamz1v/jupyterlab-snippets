@@ -1,18 +1,23 @@
 import { NotebookPanel } from '@jupyterlab/notebook';
-import { showErrorMessage } from '@jupyterlab/apputils';
 
+/**
+ * Insert `snippetContent` as a new code cell directly below the active
+ * cell of `panel`, then make it the active, sole-selected cell.
+ *
+ * @returns `true` on success, or `false` if the notebook has no model
+ * and nothing could be inserted.
+ */
 export const insertSnippetToCell = async (
   panel: NotebookPanel,
   snippetContent: string
-): Promise<void> => {
+): Promise<boolean> => {
   await panel.context.ready;
   const notebook = panel.content;
   const activeIndex = notebook.activeCellIndex;
   const model = notebook.model;
 
   if (!model) {
-    showErrorMessage('Error', 'No notebook model available');
-    return;
+    return false;
   }
 
   model.sharedModel.insertCell(activeIndex + 1, {
@@ -23,4 +28,6 @@ export const insertSnippetToCell = async (
   notebook.activeCellIndex = activeIndex + 1;
   notebook.deselectAll();
   notebook.select(notebook.activeCell!);
+
+  return true;
 };

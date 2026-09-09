@@ -35,7 +35,10 @@ export const addSnippetsToMenu = (
         commands.addCommand(id, {
           label,
           execute: async () => {
-            await insertSnippetToCell(panel, snippetContent);
+            const inserted = await insertSnippetToCell(panel, snippetContent);
+            if (!inserted) {
+              showErrorMessage('Error', 'No notebook model available');
+            }
           }
         })
       );
