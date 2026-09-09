@@ -57,12 +57,15 @@ export const createSnippetsButton = (
         .composite as string;
 
       if (snippetsPath) {
-        const clientSnippets = await loadSnippetsFromClientFile(
+        const { snippets, error } = await loadSnippetsFromClientFile(
           contents,
           snippetsPath
         );
-        if (clientSnippets) {
-          addSnippetsToMenu(commands, menu, clientSnippets, panel);
+        if (error) {
+          showErrorMessage(error.title, error.message);
+        }
+        if (snippets) {
+          addSnippetsToMenu(commands, menu, snippets, panel);
           hasSnippets = true;
         }
       } else {
