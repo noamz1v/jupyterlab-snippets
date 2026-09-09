@@ -8,6 +8,12 @@ import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
 import { createSnippetsButton } from './snippet-menu';
 
+/** Name the Snippets button is registered under in a notebook toolbar. */
+const TOOLBAR_ITEM_NAME = 'snippetsButton';
+
+/** Position of the Snippets button within a notebook toolbar. */
+const TOOLBAR_ITEM_RANK = 10;
+
 /**
  * Initialization data for the jupyterlab-snippets extension.
  */
@@ -26,18 +32,16 @@ const plugin: JupyterFrontEndPlugin<void> = {
     console.log('JupyterLab extension jupyterlab-snippets is activated!');
 
     const settings = await settingRegistry.load(plugin.id);
-    console.log('jupyterlab-snippets settings loaded:', settings.composite);
 
-    const snippetsButton = createSnippetsButton(app, tracker, settings);
-
-    const SNIPPETS_BUTTON_POSITION = 10;
-
-    tracker.widgetAdded.connect((sender, panel) => {
+    // Give every notebook its own button instance: a Lumino widget can
+    // only live in one parent, so a shared instance would hop to whichever
+    // notebook opened last.
+    tracker.widgetAdded.connect((_, panel) => {
       void panel.context.ready.then(() => {
         panel.toolbar.insertItem(
-          SNIPPETS_BUTTON_POSITION,
-          'snippetsButton',
-          snippetsButton
+          TOOLBAR_ITEM_RANK,
+          TOOLBAR_ITEM_NAME,
+          createSnippetsButton(app, tracker, settings)
         );
       });
     });
