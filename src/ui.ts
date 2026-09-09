@@ -8,26 +8,39 @@ import { loadSnippetsFromClientFile } from './snippets-loader';
 import { insertSnippetToCell, formatLabel } from './commands';
 import { CommandRegistry } from '@lumino/commands';
 
+/**
+ * Populate `menu` with one item per snippet, registering a backing
+ * command for each.
+ *
+ * @returns a function that disposes every command registered by this
+ * call, to be run once the menu is no longer needed.
+ */
 export const addSnippetsToMenu = (
   commands: CommandRegistry,
   menu: Menu,
   snippets: SnippetMap,
   panel: NotebookPanel
-): void => {
+): (() => void) => {
+  const registered: { dispose(): void }[] = [];
+
   Object.entries(snippets).forEach(([label, snippetContent]) => {
     const id = `snippets:${formatLabel(label)}:${Date.now()}`;
 
     if (!commands.hasCommand(id)) {
-      commands.addCommand(id, {
-        label,
-        execute: async () => {
-          await insertSnippetToCell(panel, snippetContent);
-        }
-      });
+      registered.push(
+        commands.addCommand(id, {
+          label,
+          execute: async () => {
+            await insertSnippetToCell(panel, snippetContent);
+          }
+        })
+      );
     }
 
     menu.addItem({ command: id });
   });
+
+  return () => registered.forEach(command => command.dispose());
 };
 
 export const createSnippetsButton = (
@@ -38,10 +51,18 @@ export const createSnippetsButton = (
   const { commands, serviceManager } = app;
   const contents = serviceManager.contents;
 
+  // The most recently opened menu. Disposing it on the next open releases
+  // the commands registered for its items, so the global command registry
+  // does not grow with every click.
+  let activeMenu: Menu | null = null;
+
   const button = new ToolbarButton({
     label: 'Snippets',
     tooltip: 'Open snippet menu',
     onClick: async () => {
+      activeMenu?.dispose();
+      activeMenu = null;
+
       const panel = tracker.currentWidget;
 
       if (!panel) {
@@ -65,7 +86,13 @@ export const createSnippetsButton = (
           showErrorMessage(error.title, error.message);
         }
         if (snippets) {
-          addSnippetsToMenu(commands, menu, snippets, panel);
+          const disposeCommands = addSnippetsToMenu(
+            commands,
+            menu,
+            snippets,
+            panel
+          );
+          menu.disposed.connect(disposeCommands);
           hasSnippets = true;
         }
       } else {
@@ -76,9 +103,11 @@ export const createSnippetsButton = (
       }
 
       if (hasSnippets) {
+        activeMenu = menu;
         const rect = button.node.getBoundingClientRect();
         menu.open(rect.left, rect.bottom);
       } else {
+        menu.dispose();
         showErrorMessage('Snippets', 'No snippets were found');
       }
     }
