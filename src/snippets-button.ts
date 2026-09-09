@@ -1,10 +1,6 @@
-import { INotebookTracker } from '@jupyterlab/notebook';
 import { ToolbarButton } from '@jupyterlab/apputils';
-import { Contents } from '@jupyterlab/services';
-import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
-import { buildSnippetMenu } from './snippet-menu';
-import { notifySnippetError } from './notifications';
+import { SnippetMenuContext, showSnippetMenu } from './show-snippet-menu';
 
 /** Name the Snippets button is registered under in a notebook toolbar. */
 const TOOLBAR_ITEM_NAME = 'snippetsButton';
@@ -12,43 +8,12 @@ const TOOLBAR_ITEM_NAME = 'snippetsButton';
 /** Position of the Snippets button within a notebook toolbar. */
 const TOOLBAR_ITEM_RANK = 10;
 
-/** Services the Snippets button needs to open its menu. */
-export type SnippetMenuContext = {
-  readonly contents: Contents.IManager;
-  readonly tracker: INotebookTracker;
-  readonly settings: ISettingRegistry.ISettings;
-};
-
-/**
- * Create a "Snippets" toolbar button. Clicking it opens a menu of the
- * configured snippets for the active notebook, anchored beneath the button.
- */
+/** Create a "Snippets" toolbar button that opens the snippet menu on click. */
 const createSnippetsButton = (context: SnippetMenuContext): ToolbarButton => {
-  const { contents, tracker, settings } = context;
-
   const button = new ToolbarButton({
     label: 'Snippets',
     tooltip: 'Open snippet menu',
-    onClick: async () => {
-      const panel = tracker.currentWidget;
-      if (!panel) {
-        notifySnippetError('no active notebook', 'No active notebook found');
-        return;
-      }
-
-      const menu = await buildSnippetMenu(contents, settings, panel);
-      if (!menu) {
-        notifySnippetError('no snippets available', 'No snippets were found');
-        return;
-      }
-
-      menu.aboutToClose.connect(() => {
-        setTimeout(() => menu.dispose(), 0);
-      });
-
-      const { left, bottom } = button.node.getBoundingClientRect();
-      menu.open(left, bottom);
-    }
+    onClick: () => void showSnippetMenu(button.node, context)
   });
 
   return button;
