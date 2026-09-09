@@ -4,6 +4,7 @@ import { Contents } from '@jupyterlab/services';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { CommandRegistry } from '@lumino/commands';
 import { Menu } from '@lumino/widgets';
+
 import { SnippetMap } from './types';
 import { loadSnippets } from './snippets-loader';
 import { insertSnippetBelowActiveCell } from './notebook-actions';

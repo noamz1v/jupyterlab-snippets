@@ -2,7 +2,6 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
-
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
@@ -15,7 +14,10 @@ const TOOLBAR_ITEM_NAME = 'snippetsButton';
 const TOOLBAR_ITEM_RANK = 10;
 
 /**
- * Initialization data for the jupyterlab-snippets extension.
+ * Adds a "Snippets" button to every notebook toolbar. The button opens a
+ * menu of code snippets, read from the JSON file named by the
+ * `custom_snippets_path` setting, and inserts the chosen one as a new
+ * cell below the active cell.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-snippets:plugin',

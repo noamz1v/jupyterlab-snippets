@@ -1,4 +1,5 @@
 import { Contents } from '@jupyterlab/services';
+
 import { SnippetMap } from './types';
 
 /**
