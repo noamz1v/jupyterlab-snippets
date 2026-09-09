@@ -6,20 +6,10 @@ import { CommandRegistry } from '@lumino/commands';
 import { Menu } from '@lumino/widgets';
 
 import { SnippetMap } from './types';
+import { readSnippetsPath } from './settings';
 import { loadSnippets } from './snippets-loader';
 import { insertSnippetBelowActiveCell } from './notebook-actions';
 import { notifySnippetError } from './notifications';
-
-/** Settings key holding the path to the user's snippets file. */
-const SNIPPETS_PATH_KEY = 'custom_snippets_path';
-
-/** Read the configured snippets file path, or `null` if none is set. */
-const readSnippetsPath = (
-  settings: ISettingRegistry.ISettings
-): string | null => {
-  const value = settings.get(SNIPPETS_PATH_KEY).composite;
-  return typeof value === 'string' && value !== '' ? value : null;
-};
 
 /** Turn a snippet label into a slug suitable for a command id. */
 const formatLabel = (label: string): string =>
