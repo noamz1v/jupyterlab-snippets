@@ -5,7 +5,7 @@ import { Menu } from '@lumino/widgets';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { SnippetMap } from './types';
 import { loadSnippetsFromClientFile } from './snippets-loader';
-import { insertSnippetToCell, formatLabel } from './commands';
+import { insertSnippetToCell, formatLabel } from './notebook-actions';
 import { CommandRegistry } from '@lumino/commands';
 
 /**

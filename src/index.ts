@@ -6,7 +6,7 @@ import {
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
-import { createSnippetsButton } from './ui';
+import { createSnippetsButton } from './snippet-menu';
 
 /**
  * Initialization data for the jupyterlab-snippets extension.
