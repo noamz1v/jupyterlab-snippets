@@ -6,8 +6,7 @@ import { CommandRegistry } from '@lumino/commands';
 import { Menu } from '@lumino/widgets';
 
 import { SnippetMap } from './types';
-import { readSnippetsPath } from './settings';
-import { loadSnippets } from './snippets-loader';
+import { resolveConfiguredSnippets } from './snippets-loader';
 import { insertSnippetBelowActiveCell } from './notebook-actions';
 import { notifySnippetError } from './notifications';
 
@@ -62,16 +61,10 @@ const buildSnippetMenu = async (
   settings: ISettingRegistry.ISettings,
   panel: NotebookPanel
 ): Promise<Menu | null> => {
-  const snippetsPath = readSnippetsPath(settings);
-  if (!snippetsPath) {
-    notifySnippetError(
-      'no file configured',
-      'Unable to find custom snippets file path, did you forget to define one in the settings?'
-    );
-    return null;
-  }
-
-  const { snippets, error } = await loadSnippets(contents, snippetsPath);
+  const { snippets, error } = await resolveConfiguredSnippets(
+    contents,
+    settings
+  );
   if (error) {
     notifySnippetError(error.summary, error.detail);
   }

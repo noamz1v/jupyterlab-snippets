@@ -1,6 +1,8 @@
 import { Contents } from '@jupyterlab/services';
+import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
 import { SnippetMap } from './types';
+import { readSnippetsPath } from './settings';
 
 /**
  * A failure encountered while reading the snippets file that the user
@@ -11,7 +13,7 @@ export type SnippetsFileError = {
   readonly detail: string;
 };
 
-/** Outcome of {@link loadSnippets}. */
+/** Outcome of {@link resolveConfiguredSnippets}. */
 export type SnippetsFileResult = {
   /**
    * The parsed snippet map, or `null` when the file was missing, empty,
@@ -66,7 +68,7 @@ const describeLoadFailure = (
   };
 };
 
-export const loadSnippets = async (
+const loadSnippets = async (
   contents: Contents.IManager,
   relativePath: string
 ): Promise<SnippetsFileResult> => {
@@ -101,4 +103,27 @@ export const loadSnippets = async (
   } catch (err: unknown) {
     return { snippets: null, error: describeLoadFailure(err, relativePath) };
   }
+};
+
+/**
+ * Load the snippet map from the file named by the `custom_snippets_path`
+ * setting, or return a failure describing why it could not be loaded.
+ */
+export const resolveConfiguredSnippets = async (
+  contents: Contents.IManager,
+  settings: ISettingRegistry.ISettings
+): Promise<SnippetsFileResult> => {
+  const path = readSnippetsPath(settings);
+  if (!path) {
+    return {
+      snippets: null,
+      error: {
+        summary: 'no file configured',
+        detail:
+          'Unable to find custom snippets file path, did you forget to define one in the settings?'
+      }
+    };
+  }
+
+  return loadSnippets(contents, path);
 };
