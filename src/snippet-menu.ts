@@ -6,7 +6,7 @@ import { CommandRegistry } from '@lumino/commands';
 import { Menu } from '@lumino/widgets';
 import { SnippetMap } from './types';
 import { loadSnippets } from './snippets-loader';
-import { insertSnippetToCell } from './notebook-actions';
+import { insertSnippetBelowActiveCell } from './notebook-actions';
 
 /** Settings key holding the path to the user's snippets file. */
 const SNIPPETS_PATH_KEY = 'custom_snippets_path';
@@ -41,7 +41,7 @@ const addSnippetsToMenu = (
       commands.addCommand(command, {
         label,
         execute: async () => {
-          const inserted = await insertSnippetToCell(panel, source);
+          const inserted = await insertSnippetBelowActiveCell(panel, source);
           if (!inserted) {
             void showErrorMessage('Error', 'No notebook model available');
           }

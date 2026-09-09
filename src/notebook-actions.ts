@@ -1,33 +1,30 @@
 import { NotebookPanel } from '@jupyterlab/notebook';
 
 /**
- * Insert `snippetContent` as a new code cell directly below the active
- * cell of `panel`, then make it the active, sole-selected cell.
+ * Insert `source` as a new code cell directly below the active cell of
+ * `panel`, then make it the active, sole-selected cell.
  *
  * @returns `true` on success, or `false` if the notebook has no model
  * and nothing could be inserted.
  */
-export const insertSnippetToCell = async (
+export const insertSnippetBelowActiveCell = async (
   panel: NotebookPanel,
-  snippetContent: string
+  source: string
 ): Promise<boolean> => {
   await panel.context.ready;
-  const notebook = panel.content;
-  const activeIndex = notebook.activeCellIndex;
-  const model = notebook.model;
 
+  const notebook = panel.content;
+  const model = notebook.model;
   if (!model) {
     return false;
   }
 
-  model.sharedModel.insertCell(activeIndex + 1, {
-    cell_type: 'code',
-    source: snippetContent
-  });
+  const insertionIndex = notebook.activeCellIndex + 1;
+  model.sharedModel.insertCell(insertionIndex, { cell_type: 'code', source });
 
-  notebook.activeCellIndex = activeIndex + 1;
+  notebook.activeCellIndex = insertionIndex;
   notebook.deselectAll();
-  notebook.select(notebook.activeCell!);
+  notebook.select(notebook.widgets[insertionIndex]);
 
   return true;
 };
