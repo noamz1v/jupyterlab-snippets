@@ -1,19 +1,20 @@
 import { Contents } from '@jupyterlab/services';
 import { showErrorMessage } from '@jupyterlab/apputils';
-import { Snippets } from './types';
+import { SnippetMap } from './types';
 
-const validateSnippets = (result: any): void => {
-  if (
-    result === null ||
-    typeof result !== 'object' ||
-    Array.isArray(result) ||
-    !Object.entries(result).every(
+const validateSnippets = (result: unknown): void => {
+  const isValid =
+    typeof result === 'object' &&
+    result !== null &&
+    !Array.isArray(result) &&
+    Object.entries(result).every(
       ([key, value]) =>
         typeof key === 'string' &&
         key.trim() !== '' &&
         typeof value === 'string'
-    )
-  ) {
+    );
+
+  if (!isValid) {
     throw new Error(
       'Snippets file is invalid. Expected a JSON object where each key is a non-empty string and each value is a string of code.\n\nExample: { "Example Snippet": "print(\\"hello world\\")" }'
     );
@@ -23,7 +24,7 @@ const validateSnippets = (result: any): void => {
 export const loadSnippetsFromClientFile = async (
   contents: Contents.IManager,
   relativePath: string
-): Promise<Snippets | null> => {
+): Promise<SnippetMap | null> => {
   try {
     const file = await contents.get(relativePath, {
       type: 'file',
@@ -36,10 +37,10 @@ export const loadSnippetsFromClientFile = async (
       return null;
     }
 
-    let result;
+    let result: unknown;
     try {
       result = JSON.parse(customSnippetsJson);
-    } catch (err: any) {
+    } catch {
       showErrorMessage(
         'Bad file format',
         "The snippets file's content is not valid JSON format."
@@ -49,9 +50,14 @@ export const loadSnippetsFromClientFile = async (
 
     validateSnippets(result);
 
-    return result as Snippets;
-  } catch (err: any) {
-    if (err.response?.status === 404) {
+    return result as SnippetMap;
+  } catch (err: unknown) {
+    const error = err as {
+      response?: { status?: number };
+      message?: string;
+    };
+
+    if (error.response?.status === 404) {
       showErrorMessage(
         'Snippets Not Found',
         `The snippets file was not found at: ${relativePath}`
@@ -59,7 +65,7 @@ export const loadSnippetsFromClientFile = async (
     } else {
       showErrorMessage(
         'Snippets Error',
-        `Failed to fetch snippets file due to the following error: ${String(err.message || err)}`
+        `Failed to fetch snippets file due to the following error: ${String(error.message || err)}`
       );
     }
     return null;

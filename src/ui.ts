@@ -3,7 +3,7 @@ import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 import { ToolbarButton, showErrorMessage } from '@jupyterlab/apputils';
 import { Menu } from '@lumino/widgets';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
-import { Snippets } from './types';
+import { SnippetMap } from './types';
 import { loadSnippetsFromClientFile } from './snippets-loader';
 import { insertSnippetToCell, formatLabel } from './commands';
 import { CommandRegistry } from '@lumino/commands';
@@ -11,7 +11,7 @@ import { CommandRegistry } from '@lumino/commands';
 export const addSnippetsToMenu = (
   commands: CommandRegistry,
   menu: Menu,
-  snippets: Snippets,
+  snippets: SnippetMap,
   panel: NotebookPanel
 ): void => {
   Object.entries(snippets).forEach(([label, snippetContent]) => {
