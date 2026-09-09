@@ -7,12 +7,8 @@ import { Menu } from '@lumino/widgets';
 
 import { SnippetMap } from './types';
 import { resolveConfiguredSnippets } from './snippets-loader';
-import { insertSnippetBelowActiveCell } from './notebook-actions';
+import { registerSnippetCommand } from './snippet-command';
 import { notifySnippetError } from './notifications';
-
-/** Turn a snippet label into a slug suitable for a command id. */
-const formatLabel = (label: string): string =>
-  label.toLowerCase().replace(/\s+/g, '-');
 
 /** Populate `menu` with one item per snippet, backed by a command each. */
 const addSnippetsToMenu = (
@@ -20,29 +16,8 @@ const addSnippetsToMenu = (
   snippets: SnippetMap,
   panel: NotebookPanel
 ): void => {
-  const { commands } = menu;
-
   for (const [label, source] of Object.entries(snippets)) {
-    // Salt each id with a timestamp so a rebuild never reuses an existing
-    // command: edits to a snippet's body (not just its name) are then
-    // always reflected the next time the menu is opened.
-    const command = `snippets:${formatLabel(label)}:${Date.now()}`;
-
-    if (!commands.hasCommand(command)) {
-      commands.addCommand(command, {
-        label,
-        execute: async () => {
-          const inserted = await insertSnippetBelowActiveCell(panel, source);
-          if (!inserted) {
-            notifySnippetError(
-              'no notebook model',
-              'No notebook model available'
-            );
-          }
-        }
-      });
-    }
-
+    const command = registerSnippetCommand(menu.commands, label, source, panel);
     menu.addItem({ command });
   }
 };
