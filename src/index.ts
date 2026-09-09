@@ -41,7 +41,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         panel.toolbar.insertItem(
           TOOLBAR_ITEM_RANK,
           TOOLBAR_ITEM_NAME,
-          createSnippetsButton(app, tracker, settings)
+          createSnippetsButton(app.serviceManager.contents, tracker, settings)
         );
       });
     });

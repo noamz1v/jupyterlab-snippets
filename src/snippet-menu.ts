@@ -1,4 +1,3 @@
-import { JupyterFrontEnd } from '@jupyterlab/application';
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 import { ToolbarButton, showErrorMessage } from '@jupyterlab/apputils';
 import { Contents } from '@jupyterlab/services';
@@ -8,6 +7,17 @@ import { Menu } from '@lumino/widgets';
 import { SnippetMap } from './types';
 import { loadSnippets } from './snippets-loader';
 import { insertSnippetToCell } from './notebook-actions';
+
+/** Settings key holding the path to the user's snippets file. */
+const SNIPPETS_PATH_KEY = 'custom_snippets_path';
+
+/** Read the configured snippets file path, or `null` if none is set. */
+const readSnippetsPath = (
+  settings: ISettingRegistry.ISettings
+): string | null => {
+  const value = settings.get(SNIPPETS_PATH_KEY).composite;
+  return typeof value === 'string' && value !== '' ? value : null;
+};
 
 /** Turn a snippet label into a slug suitable for a command id. */
 const formatLabel = (label: string): string =>
@@ -33,7 +43,7 @@ const addSnippetsToMenu = (
         execute: async () => {
           const inserted = await insertSnippetToCell(panel, source);
           if (!inserted) {
-            showErrorMessage('Error', 'No notebook model available');
+            void showErrorMessage('Error', 'No notebook model available');
           }
         }
       });
@@ -57,9 +67,9 @@ const buildSnippetMenu = async (
   settings: ISettingRegistry.ISettings,
   panel: NotebookPanel
 ): Promise<Menu | null> => {
-  const snippetsPath = settings.get('custom_snippets_path').composite as string;
+  const snippetsPath = readSnippetsPath(settings);
   if (!snippetsPath) {
-    showErrorMessage(
+    void showErrorMessage(
       'Snippets Error',
       'Unable to find custom snippets file path, did you forget to define one in the settings?'
     );
@@ -68,7 +78,7 @@ const buildSnippetMenu = async (
 
   const { snippets, error } = await loadSnippets(contents, snippetsPath);
   if (error) {
-    showErrorMessage(error.title, error.message);
+    void showErrorMessage(error.title, error.message);
   }
   if (!snippets) {
     return null;
@@ -84,25 +94,23 @@ const buildSnippetMenu = async (
  * beneath the button, for the notebook that is currently active.
  */
 export const createSnippetsButton = (
-  app: JupyterFrontEnd,
+  contents: Contents.IManager,
   tracker: INotebookTracker,
   settings: ISettingRegistry.ISettings
 ): ToolbarButton => {
-  const contents = app.serviceManager.contents;
-
   const button = new ToolbarButton({
     label: 'Snippets',
     tooltip: 'Open snippet menu',
     onClick: async () => {
       const panel = tracker.currentWidget;
       if (!panel) {
-        showErrorMessage('Error', 'No active notebook found');
+        void showErrorMessage('Error', 'No active notebook found');
         return;
       }
 
       const menu = await buildSnippetMenu(contents, settings, panel);
       if (!menu) {
-        showErrorMessage('Snippets', 'No snippets were found');
+        void showErrorMessage('Snippets', 'No snippets were found');
         return;
       }
 
