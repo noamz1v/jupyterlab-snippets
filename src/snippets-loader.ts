@@ -30,6 +30,12 @@ export type SnippetsFileResult = {
 const INVALID_SNIPPETS_MESSAGE =
   'Snippets file is invalid. Expected a JSON object where each key is a non-empty string and each value is a string of code.\n\nExample: { "Example Snippet": "print(\\"hello world\\")" }';
 
+/** A {@link SnippetsFileResult} carrying only a failure to report. */
+const failure = (summary: string, detail: string): SnippetsFileResult => ({
+  snippets: null,
+  error: { summary, detail }
+});
+
 /** Assert that a parsed JSON value has the shape of a {@link SnippetMap}. */
 function assertSnippetMap(value: unknown): asserts value is SnippetMap {
   const isSnippetMap =
@@ -53,18 +59,18 @@ const describeLoadFailure = (
   err: unknown,
   relativePath: string
 ): SnippetsFileError => {
-  const response = (err as { response?: { status?: number } }).response;
-  if (response?.status === 404) {
+  const view = err as { response?: { status?: number }; message?: string };
+
+  if (view.response?.status === 404) {
     return {
       summary: 'file not found',
       detail: `The snippets file was not found at: ${relativePath}`
     };
   }
 
-  const message = (err as { message?: string }).message;
   return {
     summary: 'could not read file',
-    detail: `Failed to fetch snippets file due to the following error: ${String(message || err)}`
+    detail: `Failed to fetch snippets file due to the following error: ${String(view.message || err)}`
   };
 };
 
@@ -88,13 +94,10 @@ const loadSnippets = async (
     try {
       parsed = JSON.parse(raw);
     } catch {
-      return {
-        snippets: null,
-        error: {
-          summary: 'invalid JSON',
-          detail: "The snippets file's content is not valid JSON format."
-        }
-      };
+      return failure(
+        'invalid JSON',
+        "The snippets file's content is not valid JSON format."
+      );
     }
 
     assertSnippetMap(parsed);
@@ -115,14 +118,10 @@ export const resolveConfiguredSnippets = async (
 ): Promise<SnippetsFileResult> => {
   const path = readSnippetsPath(settings);
   if (!path) {
-    return {
-      snippets: null,
-      error: {
-        summary: 'no file configured',
-        detail:
-          'Unable to find custom snippets file path, did you forget to define one in the settings?'
-      }
-    };
+    return failure(
+      'no file configured',
+      'Unable to find custom snippets file path, did you forget to define one in the settings?'
+    );
   }
 
   return loadSnippets(contents, path);
