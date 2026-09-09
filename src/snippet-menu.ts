@@ -1,5 +1,4 @@
-import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
-import { ToolbarButton } from '@jupyterlab/apputils';
+import { NotebookPanel } from '@jupyterlab/notebook';
 import { Contents } from '@jupyterlab/services';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { CommandRegistry } from '@lumino/commands';
@@ -31,7 +30,7 @@ const addSnippetsToMenu = (
  * @returns the menu, or `null` if no menu could be built (a dialog
  * explaining why has already been shown).
  */
-const buildSnippetMenu = async (
+export const buildSnippetMenu = async (
   contents: Contents.IManager,
   settings: ISettingRegistry.ISettings,
   panel: NotebookPanel
@@ -50,41 +49,4 @@ const buildSnippetMenu = async (
   const menu = new Menu({ commands: new CommandRegistry() });
   addSnippetsToMenu(menu, snippets, panel);
   return menu;
-};
-
-/**
- * Create the notebook toolbar button that opens the snippets menu, anchored
- * beneath the button, for the notebook that is currently active.
- */
-export const createSnippetsButton = (
-  contents: Contents.IManager,
-  tracker: INotebookTracker,
-  settings: ISettingRegistry.ISettings
-): ToolbarButton => {
-  const button = new ToolbarButton({
-    label: 'Snippets',
-    tooltip: 'Open snippet menu',
-    onClick: async () => {
-      const panel = tracker.currentWidget;
-      if (!panel) {
-        notifySnippetError('no active notebook', 'No active notebook found');
-        return;
-      }
-
-      const menu = await buildSnippetMenu(contents, settings, panel);
-      if (!menu) {
-        notifySnippetError('no snippets available', 'No snippets were found');
-        return;
-      }
-
-      menu.aboutToClose.connect(() => {
-        setTimeout(() => menu.dispose(), 0);
-      });
-
-      const { left, bottom } = button.node.getBoundingClientRect();
-      menu.open(left, bottom);
-    }
-  });
-
-  return button;
 };

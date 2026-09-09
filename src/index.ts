@@ -5,13 +5,7 @@ import {
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
-import { createSnippetsButton } from './snippet-menu';
-
-/** Name the Snippets button is registered under in a notebook toolbar. */
-const TOOLBAR_ITEM_NAME = 'snippetsButton';
-
-/** Position of the Snippets button within a notebook toolbar. */
-const TOOLBAR_ITEM_RANK = 10;
+import { installSnippetsButton } from './snippets-button';
 
 /**
  * Adds a "Snippets" button to every notebook toolbar. The button opens a
@@ -33,17 +27,10 @@ const plugin: JupyterFrontEndPlugin<void> = {
   ) => {
     const settings = await settingRegistry.load(plugin.id);
 
-    // Give every notebook its own button instance: a Lumino widget can
-    // only live in one parent, so a shared instance would hop to whichever
-    // notebook opened last.
-    tracker.widgetAdded.connect((_, panel) => {
-      void panel.context.ready.then(() => {
-        panel.toolbar.insertItem(
-          TOOLBAR_ITEM_RANK,
-          TOOLBAR_ITEM_NAME,
-          createSnippetsButton(app.serviceManager.contents, tracker, settings)
-        );
-      });
+    installSnippetsButton({
+      contents: app.serviceManager.contents,
+      tracker,
+      settings
     });
   }
 };
