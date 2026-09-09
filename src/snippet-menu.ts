@@ -4,7 +4,7 @@ import { ToolbarButton, showErrorMessage } from '@jupyterlab/apputils';
 import { Menu } from '@lumino/widgets';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { SnippetMap } from './types';
-import { loadSnippetsFromClientFile } from './snippets-loader';
+import { loadSnippets } from './snippets-loader';
 import { insertSnippetToCell } from './notebook-actions';
 import { CommandRegistry } from '@lumino/commands';
 
@@ -85,10 +85,7 @@ export const createSnippetsButton = (
         .composite as string;
 
       if (snippetsPath) {
-        const { snippets, error } = await loadSnippetsFromClientFile(
-          contents,
-          snippetsPath
-        );
+        const { snippets, error } = await loadSnippets(contents, snippetsPath);
         if (error) {
           showErrorMessage(error.title, error.message);
         }
