@@ -5,8 +5,12 @@ import { Menu } from '@lumino/widgets';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { SnippetMap } from './types';
 import { loadSnippetsFromClientFile } from './snippets-loader';
-import { insertSnippetToCell, formatLabel } from './notebook-actions';
+import { insertSnippetToCell } from './notebook-actions';
 import { CommandRegistry } from '@lumino/commands';
+
+/** Turn a snippet label into a slug suitable for a command id. */
+const formatLabel = (label: string): string =>
+  label.toLowerCase().replace(/\s+/g, '-');
 
 /**
  * Populate `menu` with one item per snippet, registering a backing

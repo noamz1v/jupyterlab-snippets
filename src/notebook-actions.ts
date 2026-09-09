@@ -24,7 +24,3 @@ export const insertSnippetToCell = async (
   notebook.deselectAll();
   notebook.select(notebook.activeCell!);
 };
-
-export const formatLabel = (label: string): string => {
-  return label.toLowerCase().replace(/\s+/g, '-');
-};
