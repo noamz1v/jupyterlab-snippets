@@ -4,11 +4,11 @@ import { SnippetMap } from './types';
 
 /**
  * A failure encountered while reading the snippets file that the user
- * should be told about.
+ * should be told about: `summary` names it, `detail` explains it.
  */
 export type SnippetsFileError = {
-  readonly title: string;
-  readonly message: string;
+  readonly summary: string;
+  readonly detail: string;
 };
 
 /** Outcome of {@link loadSnippets}. */
@@ -54,15 +54,15 @@ const describeLoadFailure = (
   const response = (err as { response?: { status?: number } }).response;
   if (response?.status === 404) {
     return {
-      title: 'Snippets Error: file not found',
-      message: `The snippets file was not found at: ${relativePath}`
+      summary: 'file not found',
+      detail: `The snippets file was not found at: ${relativePath}`
     };
   }
 
   const message = (err as { message?: string }).message;
   return {
-    title: 'Snippets Error: could not read file',
-    message: `Failed to fetch snippets file due to the following error: ${String(message || err)}`
+    summary: 'could not read file',
+    detail: `Failed to fetch snippets file due to the following error: ${String(message || err)}`
   };
 };
 
@@ -89,8 +89,8 @@ export const loadSnippets = async (
       return {
         snippets: null,
         error: {
-          title: 'Snippets Error: invalid JSON',
-          message: "The snippets file's content is not valid JSON format."
+          summary: 'invalid JSON',
+          detail: "The snippets file's content is not valid JSON format."
         }
       };
     }

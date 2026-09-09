@@ -1,5 +1,5 @@
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
-import { ToolbarButton, showErrorMessage } from '@jupyterlab/apputils';
+import { ToolbarButton } from '@jupyterlab/apputils';
 import { Contents } from '@jupyterlab/services';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { CommandRegistry } from '@lumino/commands';
@@ -8,6 +8,7 @@ import { Menu } from '@lumino/widgets';
 import { SnippetMap } from './types';
 import { loadSnippets } from './snippets-loader';
 import { insertSnippetBelowActiveCell } from './notebook-actions';
+import { notifySnippetError } from './notifications';
 
 /** Settings key holding the path to the user's snippets file. */
 const SNIPPETS_PATH_KEY = 'custom_snippets_path';
@@ -44,8 +45,8 @@ const addSnippetsToMenu = (
         execute: async () => {
           const inserted = await insertSnippetBelowActiveCell(panel, source);
           if (!inserted) {
-            void showErrorMessage(
-              'Snippets Error: no notebook model',
+            notifySnippetError(
+              'no notebook model',
               'No notebook model available'
             );
           }
@@ -73,8 +74,8 @@ const buildSnippetMenu = async (
 ): Promise<Menu | null> => {
   const snippetsPath = readSnippetsPath(settings);
   if (!snippetsPath) {
-    void showErrorMessage(
-      'Snippets Error: no file configured',
+    notifySnippetError(
+      'no file configured',
       'Unable to find custom snippets file path, did you forget to define one in the settings?'
     );
     return null;
@@ -82,7 +83,7 @@ const buildSnippetMenu = async (
 
   const { snippets, error } = await loadSnippets(contents, snippetsPath);
   if (error) {
-    void showErrorMessage(error.title, error.message);
+    notifySnippetError(error.summary, error.detail);
   }
   if (!snippets) {
     return null;
@@ -108,19 +109,13 @@ export const createSnippetsButton = (
     onClick: async () => {
       const panel = tracker.currentWidget;
       if (!panel) {
-        void showErrorMessage(
-          'Snippets Error: no active notebook',
-          'No active notebook found'
-        );
+        notifySnippetError('no active notebook', 'No active notebook found');
         return;
       }
 
       const menu = await buildSnippetMenu(contents, settings, panel);
       if (!menu) {
-        void showErrorMessage(
-          'Snippets Error: no snippets available',
-          'No snippets were found'
-        );
+        notifySnippetError('no snippets available', 'No snippets were found');
         return;
       }
 
