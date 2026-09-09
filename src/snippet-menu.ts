@@ -44,7 +44,10 @@ const addSnippetsToMenu = (
         execute: async () => {
           const inserted = await insertSnippetBelowActiveCell(panel, source);
           if (!inserted) {
-            void showErrorMessage('Error', 'No notebook model available');
+            void showErrorMessage(
+              'Snippets Error: no notebook model',
+              'No notebook model available'
+            );
           }
         }
       });
@@ -71,7 +74,7 @@ const buildSnippetMenu = async (
   const snippetsPath = readSnippetsPath(settings);
   if (!snippetsPath) {
     void showErrorMessage(
-      'Snippets Error',
+      'Snippets Error: no file configured',
       'Unable to find custom snippets file path, did you forget to define one in the settings?'
     );
     return null;
@@ -105,13 +108,19 @@ export const createSnippetsButton = (
     onClick: async () => {
       const panel = tracker.currentWidget;
       if (!panel) {
-        void showErrorMessage('Error', 'No active notebook found');
+        void showErrorMessage(
+          'Snippets Error: no active notebook',
+          'No active notebook found'
+        );
         return;
       }
 
       const menu = await buildSnippetMenu(contents, settings, panel);
       if (!menu) {
-        void showErrorMessage('Snippets', 'No snippets were found');
+        void showErrorMessage(
+          'Snippets Error: no snippets available',
+          'No snippets were found'
+        );
         return;
       }
 

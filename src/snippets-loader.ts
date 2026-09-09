@@ -54,14 +54,14 @@ const describeLoadFailure = (
   const response = (err as { response?: { status?: number } }).response;
   if (response?.status === 404) {
     return {
-      title: 'Snippets Not Found',
+      title: 'Snippets Error: file not found',
       message: `The snippets file was not found at: ${relativePath}`
     };
   }
 
   const message = (err as { message?: string }).message;
   return {
-    title: 'Snippets Error',
+    title: 'Snippets Error: could not read file',
     message: `Failed to fetch snippets file due to the following error: ${String(message || err)}`
   };
 };
@@ -89,7 +89,7 @@ export const loadSnippets = async (
       return {
         snippets: null,
         error: {
-          title: 'Bad file format',
+          title: 'Snippets Error: invalid JSON',
           message: "The snippets file's content is not valid JSON format."
         }
       };
