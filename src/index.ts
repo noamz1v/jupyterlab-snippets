@@ -31,8 +31,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
     tracker: INotebookTracker,
     settingRegistry: ISettingRegistry
   ) => {
-    console.log('JupyterLab extension jupyterlab-snippets is activated!');
-
     const settings = await settingRegistry.load(plugin.id);
 
     // Give every notebook its own button instance: a Lumino widget can
