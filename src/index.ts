@@ -16,29 +16,17 @@ const plugin: JupyterFrontEndPlugin<void> = {
   description:
     'A JupyterLab extension for managing custom snippets, compatible with JupyterLab 4.x.',
   autoStart: true,
-  requires: [INotebookTracker],
-  optional: [ISettingRegistry],
+  requires: [INotebookTracker, ISettingRegistry],
 
   activate: async (
     app: JupyterFrontEnd,
     tracker: INotebookTracker,
-    settingRegistry: ISettingRegistry | null
+    settingRegistry: ISettingRegistry
   ) => {
     console.log('JupyterLab extension jupyterlab-snippets is activated!');
 
-    let settings: ISettingRegistry.ISettings | undefined;
-
-    if (settingRegistry) {
-      try {
-        settings = await settingRegistry.load(plugin.id);
-        console.log('jupyterlab-snippets settings loaded:', settings.composite);
-      } catch (reason) {
-        console.error(
-          'Failed to load settings for jupyterlab-snippets.',
-          reason
-        );
-      }
-    }
+    const settings = await settingRegistry.load(plugin.id);
+    console.log('jupyterlab-snippets settings loaded:', settings.composite);
 
     const snippetsButton = createSnippetsButton(app, tracker, settings);
 
