@@ -7,12 +7,7 @@ import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
 import { installSnippetsButton } from './snippets-button';
 
-/**
- * Adds a "Snippets" button to every notebook toolbar. The button opens a
- * menu of code snippets, read from the JSON file named by the
- * `custom_snippets_path` setting, and inserts the chosen one as a new
- * cell below the active cell.
- */
+
 const plugin: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-snippets:plugin',
   description:
