@@ -39,16 +39,15 @@ export const showSnippetMenu = async (
     return;
   }
 
-  // On any failure the user sees two dialogs: the specific cause here,
-  // then the "no snippets available" notice below (a failed load always
-  // leaves `snippets` null).
   const { snippets, error } = await resolveConfiguredSnippets(
     contents,
     settings
   );
   if (error) {
     notifySnippetError(error.summary, error.detail);
+    return;
   }
+  // No error but nothing parsed: the file exists and is empty.
   if (!snippets) {
     notifySnippetError('no snippets available', 'No snippets were found');
     return;
