@@ -1,60 +1,83 @@
 import { Contents } from '@jupyterlab/services';
-import { showErrorMessage } from '@jupyterlab/apputils';
-import { Snippets } from './types';
+import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
+import { readSnippetsPath } from './settings';
+import {
+  SnippetsFileError,
+  SnippetsFileResult,
+  failure
+} from './snippets-file-result';
+import { assertSnippetMap } from './validate-snippet-map';
 
-const validateSnippets = (result: any): void => {
-    if (
-        result === null ||
-        typeof result !== 'object' ||
-        Array.isArray(result) ||
-        !Object.entries(result).every(
-            ([key, value]) =>
-                typeof key === 'string' &&
-                key.trim() !== '' &&
-                typeof value === 'string'
-        )
-    ) {
-        throw new Error(
-            'Snippets file is invalid. Expected a JSON object where each key is a non-empty string and each value is a string of code.\n\nExample: { "Example Snippet": "print(\\"hello world\\")" }'
-        );
-    }
+/** Turn an error thrown while fetching or validating the file into a report. */
+const describeLoadFailure = (
+  err: unknown,
+  relativePath: string
+): SnippetsFileError => {
+  const view = err as { response?: { status?: number }; message?: string };
+
+  if (view.response?.status === 404) {
+    return {
+      summary: 'file not found',
+      detail: `The snippets file was not found at: ${relativePath}`
+    };
+  }
+
+  return {
+    summary: 'could not read file',
+    detail: `Failed to fetch snippets file due to the following error: ${String(view.message || err)}`
+  };
 };
 
-export const loadSnippetsFromClientFile = async (
-    contents: Contents.IManager,
-    relativePath: string
-): Promise<Snippets | null> => {
-    try {
-        const file = await contents.get(relativePath, {
-            type: 'file',
-            format: 'text',
-            content: true
-        });
+const loadSnippets = async (
+  contents: Contents.IManager,
+  relativePath: string
+): Promise<SnippetsFileResult> => {
+  try {
+    const file = await contents.get(relativePath, {
+      type: 'file',
+      format: 'text',
+      content: true
+    });
 
-        const customSnippetsJson = file.content as string;
-        if (!customSnippetsJson){
-            return null;
-        }
-
-        let result;
-        try {
-            result = JSON.parse(customSnippetsJson);
-        }
-        catch (err: any){
-            showErrorMessage('Bad file format', `The snippets file's content is not valid JSON format.`);
-            return null;
-        }
-
-        validateSnippets(result);
-
-        return result as Snippets;
-    } catch (err: any) {
-        if (err.response?.status === 404) {
-            showErrorMessage('Snippets Not Found', `The snippets file was not found at: ${relativePath}`);
-        } else {
-            showErrorMessage('Snippets Error', `Failed to fetch snippets file due to the following error: ${String(err.message || err)}`);
-        }
-        return null;
+    const raw = file.content as string;
+    if (!raw) {
+      return { snippets: null, error: null };
     }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return failure(
+        'invalid JSON',
+        "The snippets file's content is not valid JSON format."
+      );
+    }
+
+    assertSnippetMap(parsed);
+
+    return { snippets: parsed, error: null };
+  } catch (err: unknown) {
+    return { snippets: null, error: describeLoadFailure(err, relativePath) };
+  }
+};
+
+/**
+ * Load the snippet map from the file named by the `custom_snippets_path`
+ * setting, or return a failure describing why it could not be loaded.
+ */
+export const resolveConfiguredSnippets = async (
+  contents: Contents.IManager,
+  settings: ISettingRegistry.ISettings
+): Promise<SnippetsFileResult> => {
+  const path = readSnippetsPath(settings);
+  if (!path) {
+    return failure(
+      'no file configured',
+      'Unable to find custom snippets file path, did you forget to define one in the settings?'
+    );
+  }
+
+  return loadSnippets(contents, path);
 };
