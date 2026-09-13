@@ -64,7 +64,7 @@ The file is a single flat JSON object. Each **key** becomes a menu label; each
 
 ```json
 {
-  "Label shown in the menu": "the code that gets inserted, \\n for new lines"
+  "Label shown in the menu": "the code that gets inserted, \n for new lines"
 }
 ```
 
